@@ -1,0 +1,174 @@
+// prisma/schema.prisma - SCHEMA LENGKAP
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  category    MenuCategory
+  image       String?
+  isAvailable Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  ingredients String?
+  calories    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders     OrderItem[]
+
+  @@map("menu_items")
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique
+  customerName String
+  customerEmail String
+  customerPhone String
+  customerAddress String?
+  status      OrderStatus @default(PENDING)
+  type        OrderType @default(DINE_IN) // DINE_IN, TAKEAWAY, DELIVERY
+  totalAmount Float
+  notes       String?
+  items       OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  menuItemId  String
+  quantity    Int
+  price       Float    // Price at time of order
+  notes       String?
+  
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@map("order_items")
+}
+
+model Gallery {
+  id        String   @id @default(cuid())
+  title     String
+  image     String
+  category  GalleryCategory
+  description String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("gallery")
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    ContactStatus @default(UNREAD)
+  response  String?
+  respondedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@map("contacts")
+}
+
+model Reservation {
+  id          String   @id @default(cuid())
+  customerName String
+  customerEmail String
+  customerPhone String
+  date        DateTime
+  guests      Int
+  tableNumber String?
+  status      ReservationStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("reservations")
+}
+
+// ENUMS untuk konsistensi data
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum MenuCategory {
+  COFFEE
+  NON_COFFEE
+  FOOD
+  DESSERT
+  SMOOTHIE
+  TEA
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum GalleryCategory {
+  INTERIOR
+  COFFEE
+  ATMOSPHERE
+  FOOD
+  BARISTA
+  EVENTS
+  CUSTOMERS
+}
+
+enum ContactStatus {
+  UNREAD
+  READ
+  RESPONDED
+  ARCHIVED
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
