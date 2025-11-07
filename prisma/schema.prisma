@@ -39,36 +39,33 @@ model MenuItem {
   @@map("menu_items")
 }
 
+// Tambahkan model ini ke schema yang sudah ada
 model Order {
-  id          String   @id @default(cuid())
-  orderNumber String   @unique
-  customerName String
+  id            String     @id @default(cuid())
+  orderNumber   String     @unique
+  customerName  String
   customerEmail String
   customerPhone String
-  customerAddress String?
-  status      OrderStatus @default(PENDING)
-  type        OrderType @default(DINE_IN) // DINE_IN, TAKEAWAY, DELIVERY
-  totalAmount Float
-  notes       String?
-  items       OrderItem[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  items         OrderItem[]
+  total         Float
+  status        OrderStatus @default(PENDING)
+  type          OrderType   @default(DINE_IN)
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@map("orders")
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   orderId     String
-  menuItemId  String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId  String?
+  menuItem    MenuItem? @relation(fields: [menuItemId], references: [id])
+  name        String
   quantity    Int
-  price       Float    // Price at time of order
-  notes       String?
-  
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
-
-  createdAt   DateTime @default(now())
+  price       Float
 
   @@map("order_items")
 }
@@ -101,20 +98,26 @@ model Contact {
 }
 
 model Reservation {
-  id          String   @id @default(cuid())
-  customerName String
-  customerEmail String
-  customerPhone String
-  date        DateTime
-  guests      Int
-  tableNumber String?
-  status      ReservationStatus @default(PENDING)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  reservationNumber String   @unique
+  customerName     String
+  customerEmail    String
+  customerPhone    String
+  date             String   // Format: YYYY-MM-DD
+  time             String   // Format: HH:MM
+  partySize        Int
+  tablePreference  String?
+  specialRequests  String?
+  status           String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  source           String   @default("WEBSITE") // WEBSITE, PHONE, WALK_IN
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  confirmedAt      DateTime?
+  cancelledAt      DateTime?
 
   @@map("reservations")
 }
+
 
 // ENUMS untuk konsistensi data
 enum UserRole {
@@ -172,3 +175,20 @@ enum ReservationStatus {
   CANCELLED
   NO_SHOW
 }
+
+model Message {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String
+  category  String   @default("OTHER") // MENU_INQUIRY, BOOKING, COMPLAINT, COMPLIMENT, CATERING, OTHER
+  status    String   @default("UNREAD") // UNREAD, READ, REPLIED, ARCHIVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  repliedAt DateTime?
+
+  @@map("messages")
+}
+

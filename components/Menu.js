@@ -1,7 +1,8 @@
-// components/Menu.js - COMPLETE WITH REAL DATA
+// components/Menu.js - FIXED WITH CART SYSTEM
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import CategoryFilter from './CategoryFilter'
@@ -10,9 +11,11 @@ import MenuCard from './MenuCard'
 gsap.registerPlugin(ScrollTrigger)
 
 export default function Menu() {
+  const router = useRouter()
   const [activeCategory, setActiveCategory] = useState('coffee')
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
+  const [cart, setCart] = useState([])
   const menuRef = useRef()
 
   // Map category names to database enum values
@@ -21,6 +24,165 @@ export default function Menu() {
     'non-coffee': 'NON_COFFEE', 
     'food': 'FOOD',
     'dessert': 'DESSERT'
+  }
+
+  // Load cart from localStorage on component mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cart')
+    if (savedCart) {
+      setCart(JSON.parse(savedCart))
+    }
+  }, [])
+
+  // Save cart to localStorage whenever cart changes
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart))
+  }, [cart])
+
+  // Add to cart function
+  const addToCart = (item) => {
+    const existingItem = cart.find(cartItem => cartItem.id === item.id)
+    
+    if (existingItem) {
+      const updatedCart = cart.map(cartItem =>
+        cartItem.id === item.id 
+          ? { ...cartItem, quantity: cartItem.quantity + 1 }
+          : cartItem
+      )
+      setCart(updatedCart)
+    } else {
+      setCart([...cart, { ...item, quantity: 1 }])
+    }
+    
+    // Show success feedback (optional)
+    console.log(`Added ${item.name} to cart`)
+  }
+
+  // Proceed to checkout
+  const proceedToCheckout = () => {
+    if (cart.length === 0) {
+      alert('Keranjang masih kosong! Silakan pilih menu terlebih dahulu.')
+      return
+    }
+    router.push('/checkout')
+  }
+
+  // Sample data - more comprehensive
+  const getSampleMenuData = () => {
+    return {
+      coffee: [
+        { 
+          id: '1', 
+          name: 'VNZ Signature Blend', 
+          description: 'Blend kopi spesial dengan rasa yang unik dan nikmat', 
+          price: 35, 
+          image: '/images/coffee1.jpg',
+          category: 'COFFEE'
+        },
+        { 
+          id: '2', 
+          name: 'Cold Brew Special', 
+          description: 'Dibuat dengan proses cold brew 24 jam, rasa yang smooth', 
+          price: 32, 
+          image: '/images/cold-brew.jpg',
+          category: 'COFFEE'
+        },
+        { 
+          id: '3', 
+          name: 'Espresso Macchiato', 
+          description: 'Espresso kuat dengan sentuhan foam susu', 
+          price: 28, 
+          image: '/images/espresso.jpg',
+          category: 'COFFEE'
+        },
+        { 
+          id: '4', 
+          name: 'Cappuccino Classic', 
+          description: 'Cappuccino dengan foam susu yang creamy dan lembut', 
+          price: 30, 
+          image: '/images/cappuccino.jpg',
+          category: 'COFFEE'
+        }
+      ],
+      'non-coffee': [
+        { 
+          id: '5', 
+          name: 'Matcha Latte Premium', 
+          description: 'Green tea matcha premium dengan susu steamed', 
+          price: 30, 
+          image: '/images/matcha.jpg',
+          category: 'NON_COFFEE'
+        },
+        { 
+          id: '6', 
+          name: 'Chocolate Velvet', 
+          description: 'Coklat premium dengan tekstur velvet yang lembut', 
+          price: 28, 
+          image: '/images/chocolate.jpg',
+          category: 'NON_COFFEE'
+        },
+        { 
+          id: '7', 
+          name: 'Berry Smoothie', 
+          description: 'Smoothie segar dari campuran berry pilihan', 
+          price: 32, 
+          image: '/images/smoothie.jpg',
+          category: 'NON_COFFEE'
+        }
+      ],
+      food: [
+        { 
+          id: '8', 
+          name: 'Croissant Butter', 
+          description: 'Croissant butter yang renyah luar lembut dalam', 
+          price: 25, 
+          image: '/images/croissant.jpg',
+          category: 'FOOD'
+        },
+        { 
+          id: '9', 
+          name: 'Sandwich Club', 
+          description: 'Sandwich dengan ayam, smoke beef, dan sayuran segar', 
+          price: 45, 
+          image: '/images/sandwich.jpg',
+          category: 'FOOD'
+        },
+        { 
+          id: '10', 
+          name: 'Avocado Toast', 
+          description: 'Roti panggang dengan avocado spread premium', 
+          price: 35, 
+          image: '/images/avocado-toast.jpg',
+          category: 'FOOD'
+        }
+      ],
+      dessert: [
+        { 
+          id: '11', 
+          name: 'Tiramisu Classic', 
+          description: 'Dessert Italia klasik dengan rasa kopi yang kuat', 
+          price: 35, 
+          image: '/images/tiramisu.jpg',
+          category: 'DESSERT'
+        },
+        { 
+          id: '12', 
+          name: 'New York Cheesecake', 
+          description: 'Cheesecake lembut dengan base biscuit yang renyah', 
+          price: 32, 
+          image: '/images/cheesecake.jpg',
+          category: 'DESSERT'
+        },
+        { 
+          id: '13', 
+          name: 'Chocolate Lava', 
+          description: 'Cake coklat dengan lelehan coklat di dalamnya', 
+          price: 38, 
+          image: '/images/chocolate-lava.jpg',
+          category: 'DESSERT'
+        }
+      ]
+    }
   }
 
   // Fetch menu data from API
@@ -37,7 +199,7 @@ export default function Menu() {
         setMenuItems(data)
       } catch (error) {
         console.error('Error fetching menu:', error)
-        // Fallback to sample data
+        // Fallback to enhanced sample data
         setMenuItems(getSampleMenuData()[activeCategory] || [])
       } finally {
         setLoading(false)
@@ -46,52 +208,6 @@ export default function Menu() {
 
     fetchMenu()
   }, [activeCategory])
-
-  // Sample data fallback
-  const getSampleMenuData = () => {
-    return {
-      coffee: [
-        { 
-          id: '1', 
-          name: 'VNZ Signature Blend', 
-          description: 'Blend kopi spesial dengan rasa yang unik dan nikmat', 
-          price: 35, 
-          image: '/images/coffee1.jpg',
-          category: 'COFFEE'
-        }
-      ],
-      'non-coffee': [
-        { 
-          id: '2', 
-          name: 'Matcha Latte', 
-          description: 'Green tea matcha premium dengan susu steamed', 
-          price: 30, 
-          image: '/images/matcha.jpg',
-          category: 'NON_COFFEE'
-        }
-      ],
-      food: [
-        { 
-          id: '3', 
-          name: 'Croissant', 
-          description: 'Croissant butter yang renyah luar lembut dalam', 
-          price: 25, 
-          image: '/images/croissant.jpg',
-          category: 'FOOD'
-        }
-      ],
-      dessert: [
-        { 
-          id: '4', 
-          name: 'Tiramisu', 
-          description: 'Dessert Italia klasik dengan rasa kopi yang kuat', 
-          price: 35, 
-          image: '/images/tiramisu.jpg',
-          category: 'DESSERT'
-        }
-      ]
-    }
-  }
 
   // GSAP Animations
   useEffect(() => {
@@ -137,6 +253,33 @@ export default function Menu() {
     return () => ctx.revert()
   }, [menuItems])
 
+  // Category display names
+  const getCategoryDisplayName = (category) => {
+    const names = {
+      'coffee': 'Kopi Spesial',
+      'non-coffee': 'Minuman Non-Kopi',
+      'food': 'Makanan Ringan',
+      'dessert': 'Dessert Lezat'
+    }
+    return names[category] || category
+  }
+
+  // Category icons
+  const getCategoryIcon = (category) => {
+    const icons = {
+      'coffee': '☕',
+      'non-coffee': '🥤',
+      'food': '🍽️',
+      'dessert': '🍰'
+    }
+    return icons[category] || '📝'
+  }
+
+  // Get total items in cart
+  const getTotalItems = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0)
+  }
+
   if (loading) {
     return (
       <section id="menu" className="section-padding bg-gradient-to-br from-gray-900 via-gray-800 to-amber-900">
@@ -165,6 +308,27 @@ export default function Menu() {
           </p>
         </div>
 
+        {/* Cart & Checkout Button */}
+        <div className="flex justify-end mb-8">
+          <div className="flex items-center gap-4">
+            {cart.length > 0 && (
+              <div className="bg-amber-900/50 px-4 py-2 rounded-full border border-amber-700/50">
+                <span className="text-amber-200 text-sm">
+                  {getTotalItems()} item di keranjang
+                </span>
+              </div>
+            )}
+            <button
+              onClick={proceedToCheckout}
+              disabled={cart.length === 0}
+              className="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2"
+            >
+              <span>🛒</span>
+              Checkout ({getTotalItems()})
+            </button>
+          </div>
+        </div>
+
         {/* Category Filter */}
         <div className="mb-12 lg:mb-16">
           <CategoryFilter 
@@ -177,16 +341,10 @@ export default function Menu() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 bg-amber-900/30 px-6 py-3 rounded-full border border-amber-700/50">
             <span className="text-amber-400 text-lg">
-              {activeCategory === 'coffee' && '☕'}
-              {activeCategory === 'non-coffee' && '🥤'}
-              {activeCategory === 'food' && '🍽️'}
-              {activeCategory === 'dessert' && '🍰'}
+              {getCategoryIcon(activeCategory)}
             </span>
-            <span className="text-amber-200 font-semibold capitalize">
-              {activeCategory === 'coffee' && 'Kopi Spesial'}
-              {activeCategory === 'non-coffee' && 'Minuman Non-Kopi'}
-              {activeCategory === 'food' && 'Makanan Ringan'}
-              {activeCategory === 'dessert' && 'Dessert Lezat'}
+            <span className="text-amber-200 font-semibold">
+              {getCategoryDisplayName(activeCategory)}
             </span>
             <span className="text-amber-400/70 text-sm">
               ({menuItems.length} items)
@@ -197,16 +355,23 @@ export default function Menu() {
         {/* Menu Items Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
           {menuItems.map((item, index) => (
-            <MenuCard key={item.id} item={item} index={index} />
+            <MenuCard 
+              key={item.id} 
+              item={item} 
+              index={index} 
+              onAddToCart={addToCart}
+            />
           ))}
         </div>
 
         {/* Empty State */}
         {menuItems.length === 0 && !loading && (
           <div className="text-center py-16 lg:py-20">
-            <div className="text-amber-400/50 text-8xl mb-6">☕</div>
+            <div className="text-amber-400/50 text-8xl mb-6">
+              {getCategoryIcon(activeCategory)}
+            </div>
             <h3 className="text-2xl lg:text-3xl font-semibold text-amber-200 mb-4">
-              Menu sedang tidak tersedia
+              Menu {getCategoryDisplayName(activeCategory)} sedang tidak tersedia
             </h3>
             <p className="text-amber-100/70 text-lg max-w-md mx-auto">
               Silakan pilih kategori menu lain atau hubungi kami untuk informasi lebih lanjut.
